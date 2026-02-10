@@ -1,0 +1,16 @@
+models:
+  Product:
+    name: string
+    price: integer
+    description: text nullable
+
+controllers:
+  Product:
+    index:
+      query: all
+      render: product.index with:products
+
+    store:
+      validate: name, price
+      save: product
+      redirect: product.index
