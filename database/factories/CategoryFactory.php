@@ -2,10 +2,9 @@
 
 namespace Database\Factories;
 
-use App\Models\Category;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-class ProductFactory extends Factory
+class CategoryFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -14,10 +13,6 @@ class ProductFactory extends Factory
     {
         return [
             'name' => fake()->name(),
-            'price' => fake()->numberBetween(-10000, 10000),
-            'description' => fake()->text(),
-            'category_id' => Category::factory(),
-            'deleted_at' => fake()->dateTime(),
         ];
     }
 }

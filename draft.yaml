@@ -1,8 +1,13 @@
 models:
+  Category:
+    name: string
+
   Product:
     name: string
     price: integer
     description: text nullable
+    category_id: id foreign:categories
+    deleted_at: timestamp nullable
 
 controllers:
   Product:
@@ -10,7 +15,23 @@ controllers:
       query: all
       render: product.index with:products
 
+    create:
+      render: product.create with:categories
+
     store:
-      validate: name, price
+      validate: name, price, category_id
       save: product
+      redirect: product.index
+
+    edit:
+      model: product
+      render: product.edit with:product, categories
+
+    update:
+      validate: name, price, category_id
+      update: product
+      redirect: product.index
+
+    destroy:
+      delete: product
       redirect: product.index

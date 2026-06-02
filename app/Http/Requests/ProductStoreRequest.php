@@ -7,7 +7,7 @@ use Illuminate\Foundation\Http\FormRequest;
 class ProductStoreRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Determine if the user is authorized.
      */
     public function authorize(): bool
     {
@@ -15,13 +15,17 @@ class ProductStoreRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Validation rules
      */
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string'],
-            'price' => ['required', 'numeric'],
+            'name' => ['required', 'string', 'max:255'],
+            'price' => ['required', 'numeric', 'min:0'],
+            'description' => ['nullable', 'string'],
+
+            // Category relationship
+            'category_id' => ['required', 'exists:categories,id'],
         ];
     }
 }

@@ -1,17 +1,15 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ProductController;
 
 Route::get('/', function () {
     return view('welcome');
 });
 
+// FULL PRODUCT CRUD ROUTE
+Route::resource('products', ProductController::class);
 
-Route::resource('products', App\Http\Controllers\ProductController::class)->only('index', 'store');
-
-
-Route::resource('products', App\Http\Controllers\ProductController::class)->only('index', 'store');
-
-Route::get('/test', function(){
+Route::get('/test', function () {
     return "Blueprint Working!";
 });

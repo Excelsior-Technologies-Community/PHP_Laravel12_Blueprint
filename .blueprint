@@ -1,13 +1,18 @@
 created:
     - app/Http/Controllers/ProductController.php
+    - database/factories/CategoryFactory.php
     - database/factories/ProductFactory.php
-    - database/migrations/2026_02_10_113818_create_products_table.php
+    - database/migrations/2026_06_02_085512_create_categories_table.php
+    - database/migrations/2026_06_02_085513_create_products_table.php
+    - app/Models/Category.php
     - app/Models/Product.php
     - tests/Feature/Http/Controllers/ProductControllerTest.php
+    - app/Http/Requests/ProductUpdateRequest.php
 updated:
     - routes/web.php
 skipped:
     - resources/views/product/index.blade.php
 models:
     User: { name: string, email: string, email_verified_at: 'timestamp nullable default:NULL', password: string, remember_token: 'string:100 nullable default:NULL' }
-    Product: { name: string, price: integer, description: 'text nullable' }
+    Product: { name: string, price: integer, description: 'text nullable', category_id: 'id foreign:categories', deleted_at: 'timestamp nullable' }
+    Category: { name: string }

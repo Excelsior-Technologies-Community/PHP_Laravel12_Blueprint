@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Http\Controllers;
 
+use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -44,19 +45,69 @@ final class ProductControllerTest extends TestCase
     {
         $name = fake()->name();
         $price = fake()->numberBetween(-10000, 10000);
+        $category = Category::factory()->create();
 
         $response = $this->post(route('products.store'), [
             'name' => $name,
             'price' => $price,
+            'category_id' => $category->id,
         ]);
 
         $products = Product::query()
             ->where('name', $name)
             ->where('price', $price)
+            ->where('category_id', $category->id)
             ->get();
         $this->assertCount(1, $products);
         $product = $products->first();
 
         $response->assertRedirect(route('product.index'));
+    }
+
+
+    #[Test]
+    public function update_uses_form_request_validation(): void
+    {
+        $this->assertActionUsesFormRequest(
+            \App\Http\Controllers\ProductController::class,
+            'update',
+            \App\Http\Requests\ProductUpdateRequest::class
+        );
+    }
+
+    #[Test]
+    public function update_redirects(): void
+    {
+        $product = Product::factory()->create();
+        $name = fake()->name();
+        $price = fake()->numberBetween(-10000, 10000);
+        $category = Category::factory()->create();
+
+        $response = $this->put(route('products.update', $product), [
+            'name' => $name,
+            'price' => $price,
+            'category_id' => $category->id,
+        ]);
+
+        $product->refresh();
+
+        $response->assertRedirect(route('product.index'));
+
+        $this->assertEquals($name, $product->name);
+        $this->assertEquals($price, $product->price);
+        $this->assertEquals($category->id, $product->category_id);
+    }
+
+
+    #[Test]
+    public function destroy_deletes_and_redirects(): void
+    {
+        $product = Product::factory()->create();
+
+        $response = $this->delete(route('products.destroy', $product));
+
+        $response->assertRedirect(route('product.index'));
+
+        $this->assertModelMissing($product);
     }
 }
