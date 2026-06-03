@@ -10,6 +10,10 @@ Route::get('/', function () {
 // FULL PRODUCT CRUD ROUTE
 Route::resource('products', ProductController::class);
 
+Route::patch('/products/{product}/toggle-status', 
+    [ProductController::class, 'toggleStatus']
+)->name('products.toggleStatus');
+
 Route::get('/test', function () {
     return "Blueprint Working!";
 });

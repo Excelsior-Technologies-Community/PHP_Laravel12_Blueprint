@@ -6,49 +6,87 @@
 
 <div class="container py-4">
 
-    <!-- 🔷 HEADER -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="fw-bold mb-0">Products</h2>
-            <small class="text-muted">Manage all your products</small>
-        </div>
 
-        <a href="{{ route('products.create') }}" class="btn btn-primary">
-            + Add Product
-        </a>
+{{-- Success Message --}}
+@if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+@endif
+
+{{-- Header --}}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-0">Products</h2>
+        <small class="text-muted">Manage all your products</small>
     </div>
 
-    <!-- 🔍 SEARCH CARD -->
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-body">
+    <a href="{{ route('products.create') }}" class="btn btn-primary">
+        + Add Product
+    </a>
+</div>
 
-            <form method="GET" class="row g-2 align-items-center">
 
-                <div class="col-md-10">
-                    <input type="text"
-                        name="search"
-                        class="form-control"
-                        placeholder="Search products by name..."
-                        value="{{ request('search') }}">
-                </div>
+{{-- Search + Price Filter --}}
 
-                <div class="col-md-2 d-grid">
-                    <button type="submit" class="btn btn-outline-primary">
-                        🔍 Search
-                    </button>
-                </div>
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
 
-            </form>
+
+    <form method="GET" action="{{ route('products.index') }}">
+
+        <div class="row g-2">
+
+            {{-- Search --}}
+            <div class="col-md-4">
+                <input type="text"
+                       name="search"
+                       class="form-control"
+                       placeholder="Search by product name..."
+                       value="{{ request('search') }}">
+            </div>
+
+            {{-- Min Price --}}
+            <div class="col-md-3">
+                <input type="number"
+                       name="min_price"
+                       class="form-control"
+                       placeholder="Min Price"
+                       value="{{ request('min_price') }}">
+            </div>
+
+            {{-- Max Price --}}
+            <div class="col-md-3">
+                <input type="number"
+                       name="max_price"
+                       class="form-control"
+                       placeholder="Max Price"
+                       value="{{ request('max_price') }}">
+            </div>
+
+            {{-- Buttons --}}
+            <div class="col-md-2 d-grid">
+                <button type="submit" class="btn btn-primary">
+                    🔍 Filter
+                </button>
+            </div>
 
         </div>
-    </div>
 
-    <!-- 📦 PRODUCTS TABLE -->
-    <div class="card shadow-sm border-0">
+    </form>
 
-        <div class="card-body p-0">
+</div>
 
-            @if($products->count() > 0)
+
+</div>
+
+
+{{-- Products Table --}}
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+
+        @if($products->count())
 
             <div class="table-responsive">
 
@@ -67,57 +105,61 @@
                     <tbody>
 
                         @foreach($products as $product)
-                        <tr>
 
-                            <td class="fw-bold">#{{ $product->id }}</td>
+                            <tr>
 
-                            <td>
-                                <div class="fw-semibold">
-                                    {{ $product->name }}
-                                </div>
-                                <small class="text-muted">
-                                    {{ Str::limit($product->description, 40) }}
-                                </small>
-                            </td>
+                                <td class="fw-bold">
+                                    #{{ $product->id }}
+                                </td>
 
-                            <td>
-                                <span class="badge bg-success">
-                                    ₹ {{ $product->price }}
-                                </span>
-                            </td>
+                                <td>
+                                    <div class="fw-semibold">
+                                        {{ $product->name }}
+                                    </div>
 
-                            <td>
-                                <span class="badge bg-info text-dark">
-                                    {{ $product->category->name ?? '-' }}
-                                </span>
-                            </td>
+                                    <small class="text-muted">
+                                        {{ Str::limit($product->description, 40) }}
+                                    </small>
+                                </td>
 
-                            <td class="text-center">
+                                <td>
+                                    <span class="badge bg-success">
+                                        ₹ {{ $product->price }}
+                                    </span>
+                                </td>
 
-                                <!-- ✏️ EDIT BUTTON -->
-                                <a href="{{ route('products.edit', $product->id) }}"
-                                    class="btn btn-sm btn-outline-primary me-1">
-                                    ✏️ Edit
-                                </a>
+                                <td>
+                                    <span class="badge bg-info text-dark">
+                                        {{ $product->category->name ?? '-' }}
+                                    </span>
+                                </td>
 
-                                <!-- 🗑 DELETE BUTTON -->
-                                <form method="POST"
-                                    action="{{ route('products.destroy', $product->id) }}"
-                                    onsubmit="return confirm('Are you sure?')"
-                                    class="d-inline">
+                                <td class="text-center">
 
-                                    @csrf
-                                    @method('DELETE')
+                                    <a href="{{ route('products.edit', $product->id) }}"
+                                       class="btn btn-sm btn-outline-primary me-1">
+                                        ✏️ Edit
+                                    </a>
 
-                                    <button class="btn btn-sm btn-outline-danger">
-                                        🗑 Delete
-                                    </button>
+                                    <form method="POST"
+                                          action="{{ route('products.destroy', $product->id) }}"
+                                          class="d-inline"
+                                          onsubmit="return confirm('Are you sure you want to delete this product?')">
 
-                                </form>
+                                        @csrf
+                                        @method('DELETE')
 
-                            </td>
+                                        <button type="submit"
+                                                class="btn btn-sm btn-outline-danger">
+                                            🗑 Delete
+                                        </button>
 
-                        </tr>
+                                    </form>
+
+                                </td>
+
+                            </tr>
+
                         @endforeach
 
                     </tbody>
@@ -126,24 +168,59 @@
 
             </div>
 
-            @else
+            {{-- Pagination --}}
+           {{-- Numeric Pagination Only --}}
+@if ($products->lastPage() > 1)
 
-            <!-- EMPTY STATE -->
+<div class="d-flex justify-content-center mt-4 mb-3">
+
+<ul class="pagination">
+
+    @for ($i = 1; $i <= $products->lastPage(); $i++)
+
+        <li class="page-item {{ $products->currentPage() == $i ? 'active' : '' }}">
+
+            <a class="page-link"
+               href="{{ $products->appends(request()->query())->url($i) }}">
+                {{ $i }}
+            </a>
+
+        </li>
+
+    @endfor
+
+</ul>
+
+
+</div>
+@endif
+
+
+        @else
+
             <div class="text-center py-5">
 
-                <h5 class="text-muted">No Products Found</h5>
-                <p class="text-muted">Start by adding your first product</p>
+                <h5 class="text-muted">
+                    No Products Found
+                </h5>
 
-                <a href="{{ route('products.create') }}" class="btn btn-primary">
+                <p class="text-muted">
+                    Start by adding your first product
+                </p>
+
+                <a href="{{ route('products.create') }}"
+                   class="btn btn-primary">
                     + Create Product
                 </a>
 
             </div>
 
-            @endif
+        @endif
 
-        </div>
     </div>
+</div>
+
+
 </div>
 
 @endsection

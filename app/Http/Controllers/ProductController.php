@@ -15,11 +15,24 @@ class ProductController extends Controller
     {
         $query = Product::with('category');
 
-        if ($request->search) {
+        // Search
+        if ($request->filled('search')) {
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        $products = $query->orderBy('id', 'asc')->get();
+        // Min Price
+        if ($request->filled('min_price')) {
+            $query->where('price', '>=', $request->min_price);
+        }
+
+        // Max Price
+        if ($request->filled('max_price')) {
+            $query->where('price', '<=', $request->max_price);
+        }
+
+        $products = $query->orderBy('id', 'asc')
+            ->paginate(4)
+            ->withQueryString();
 
         return view('product.index', compact('products'));
     }
@@ -66,6 +79,19 @@ class ProductController extends Controller
         $product->update($request->all());
 
         return redirect()->route('products.index');
+    }
+
+    public function toggleStatus(Product $product)
+    {
+        $product->status = !$product->status;
+        $product->save();
+
+        return redirect()->back()->with(
+            'success',
+            $product->status
+            ? 'Product activated successfully.'
+            : 'Product deactivated successfully.'
+        );
     }
 
     // 🗑 DELETE
