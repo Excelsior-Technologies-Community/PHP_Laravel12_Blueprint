@@ -13,11 +13,13 @@ class ProductFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
-            'price' => fake()->numberBetween(-10000, 10000),
-            'description' => fake()->text(),
+            'name' => fake()->word(3, true),
+            'price' => fake()->randomFloat(2, 10, 9999),
+            'description' => fake()->sentence(10, true),
             'category_id' => Category::factory(),
-            'deleted_at' => fake()->dateTime(),
+            'status' => fake()->boolean(80),
+            'image' => null,
+            'deleted_at' => null,
         ];
     }
 }

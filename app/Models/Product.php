@@ -16,7 +16,8 @@ class Product extends Model
         'price',
         'description',
         'category_id',
-        'status', // ✅ NEW
+        'status',
+        'image',
     ];
 
     protected function casts(): array
@@ -24,6 +25,7 @@ class Product extends Model
         return [
             'id' => 'integer',
             'category_id' => 'integer',
+            'status' => 'boolean',
             'deleted_at' => 'timestamp',
         ];
     }
@@ -31,5 +33,15 @@ class Product extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('status', true);
+    }
+
+    public function scopeInactive($query)
+    {
+        return $query->where('status', false);
     }
 }

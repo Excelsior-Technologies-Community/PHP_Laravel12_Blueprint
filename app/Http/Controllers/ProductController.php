@@ -4,13 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\Category;
+use App\Http\Requests\ProductStoreRequest;
+use App\Http\Requests\ProductUpdateRequest;
+use App\Exports\ProductsExport;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProductController extends Controller
 {
-    // LIST + SEARCH
+    // LIST + SEARCH + FILTER + SORT
     public function index(Request $request): View
     {
         $query = Product::with('category');
@@ -18,6 +23,16 @@ class ProductController extends Controller
         // Search
         if ($request->filled('search')) {
             $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        // Category Filter
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        // Status Filter
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
         }
 
         // Min Price
@@ -30,9 +45,17 @@ class ProductController extends Controller
             $query->where('price', '<=', $request->max_price);
         }
 
-        $products = $query->orderBy('id', 'asc')
-            ->paginate(4)
-            ->withQueryString();
+        // Sort
+        $sortBy = $request->get('sort_by', 'id');
+        $sortDir = $request->get('sort_dir', 'asc');
+        $allowedSort = ['id', 'name', 'price', 'created_at'];
+        if (!in_array($sortBy, $allowedSort)) {
+            $sortBy = 'id';
+        }
+        $sortDir = in_array(strtolower($sortDir), ['asc', 'desc']) ? strtolower($sortDir) : 'asc';
+        $query->orderBy($sortBy, $sortDir);
+
+        $products = $query->paginate(4)->withQueryString();
 
         return view('product.index', compact('products'));
     }
@@ -45,18 +68,17 @@ class ProductController extends Controller
     }
 
     // STORE
-    public function store(Request $request): RedirectResponse
+    public function store(ProductStoreRequest $request): RedirectResponse
     {
-        $request->validate([
-            'name' => 'required',
-            'price' => 'required|numeric',
-            'category_id' => 'required|exists:categories,id',
-            'description' => 'nullable'
-        ]);
+        $data = $request->validated();
 
-        Product::create($request->all());
+        if ($request->hasFile('image')) {
+            $data['image'] = $request->file('image')->store('products', 'public');
+        }
 
-        return redirect()->route('products.index');
+        Product::create($data);
+
+        return redirect()->route('products.index')->with('success', 'Product created successfully.');
     }
 
     // EDIT FORM
@@ -67,18 +89,20 @@ class ProductController extends Controller
     }
 
     // UPDATE
-    public function update(Request $request, Product $product): RedirectResponse
+    public function update(ProductUpdateRequest $request, Product $product): RedirectResponse
     {
-        $request->validate([
-            'name' => 'required',
-            'price' => 'required|numeric',
-            'category_id' => 'required|exists:categories,id',
-            'description' => 'nullable'
-        ]);
+        $data = $request->validated();
 
-        $product->update($request->all());
+        if ($request->hasFile('image')) {
+            if ($product->image) {
+                Storage::disk('public')->delete($product->image);
+            }
+            $data['image'] = $request->file('image')->store('products', 'public');
+        }
 
-        return redirect()->route('products.index');
+        $product->update($data);
+
+        return redirect()->route('products.index')->with('success', 'Product updated successfully.');
     }
 
     public function toggleStatus(Product $product)
@@ -97,8 +121,55 @@ class ProductController extends Controller
     // 🗑 DELETE
     public function destroy(Product $product): RedirectResponse
     {
+        if ($product->image) {
+            Storage::disk('public')->delete($product->image);
+        }
         $product->delete();
 
-        return redirect()->route('products.index');
+        return redirect()->route('products.index')->with('success', 'Product deleted successfully.');
+    }
+
+    // Bulk Actions
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:products,id',
+        ]);
+
+        Product::whereIn('id', $request->ids)->each(function ($product) {
+            if ($product->image) {
+                Storage::disk('public')->delete($product->image);
+            }
+            $product->delete();
+        });
+
+        return redirect()->route('products.index')->with('success', count($request->ids) . ' products deleted successfully.');
+    }
+
+    public function bulkStatus(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:products,id',
+            'status' => 'required|in:active,inactive',
+        ]);
+
+        $status = $request->status === 'active' ? true : false;
+        Product::whereIn('id', $request->ids)->update(['status' => $status]);
+
+        return redirect()->route('products.index')->with('success', count($request->ids) . ' products status updated successfully.');
+    }
+
+    // Export
+    public function export(Request $request)
+    {
+        return Excel::download(new ProductsExport([
+            'search' => $request->get('search'),
+            'category_id' => $request->get('category_id'),
+            'status' => $request->get('status'),
+            'min_price' => $request->get('min_price'),
+            'max_price' => $request->get('max_price'),
+        ]), 'products.csv');
     }
 }

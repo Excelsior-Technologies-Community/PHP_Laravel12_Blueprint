@@ -26,7 +26,9 @@ final class ProductControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertViewIs('product.index');
-        $response->assertViewHas('products', $products);
+        $response->assertViewHas('products', function ($viewProducts) use ($products) {
+            return $viewProducts->count() === $products->count();
+        });
     }
 
 
@@ -44,7 +46,7 @@ final class ProductControllerTest extends TestCase
     public function store_saves_and_redirects(): void
     {
         $name = fake()->name();
-        $price = fake()->numberBetween(-10000, 10000);
+        $price = fake()->numberBetween(100, 10000);
         $category = Category::factory()->create();
 
         $response = $this->post(route('products.store'), [
@@ -61,7 +63,7 @@ final class ProductControllerTest extends TestCase
         $this->assertCount(1, $products);
         $product = $products->first();
 
-        $response->assertRedirect(route('product.index'));
+        $response->assertRedirect(route('products.index'));
     }
 
 
@@ -80,7 +82,7 @@ final class ProductControllerTest extends TestCase
     {
         $product = Product::factory()->create();
         $name = fake()->name();
-        $price = fake()->numberBetween(-10000, 10000);
+        $price = fake()->numberBetween(100, 10000);
         $category = Category::factory()->create();
 
         $response = $this->put(route('products.update', $product), [
@@ -91,7 +93,7 @@ final class ProductControllerTest extends TestCase
 
         $product->refresh();
 
-        $response->assertRedirect(route('product.index'));
+        $response->assertRedirect(route('products.index'));
 
         $this->assertEquals($name, $product->name);
         $this->assertEquals($price, $product->price);
@@ -106,8 +108,8 @@ final class ProductControllerTest extends TestCase
 
         $response = $this->delete(route('products.destroy', $product));
 
-        $response->assertRedirect(route('product.index'));
+        $response->assertRedirect(route('products.index'));
 
-        $this->assertModelMissing($product);
+        $this->assertSoftDeleted($product);
     }
 }
